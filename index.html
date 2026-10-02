@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Rural Career & Exam AI Navigator</title>
+    
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --text-color: #2c3e50;
+            --header-bg: #1a5276;
+            --card-bg: #ffffff;
+            --card-border: #e0e0e0;
+            --accent-color: #27ae60;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --header-bg: #0f2d42;
+            --card-bg: #1e1e1e;
+            --card-border: #333333;
+            --accent-color: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header-tools {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tool-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--card-border);
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .content-section {
+            display: none;
+            background: var(--card-bg);
+            padding: 22px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid var(--card-border);
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .card {
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-left: 5px solid var(--header-bg);
+            margin-bottom: 15px;
+        }
+
+        .card h3 {
+            color: var(--header-bg);
+            margin-bottom: 8px;
+        }
+
+        body.dark-mode .card h3 {
+            color: #3498db;
+        }
+
+        /* Progress Bar Styling */
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 15px 0;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent-color);
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            transition: width 0.4s ease;
+        }
+
+        .roadmap-step {
+            padding: 12px;
+            border-left: 3px solid var(--accent-color);
+            margin: 10px 0;
+            background: rgba(39, 174, 96, 0.05);
+            border-radius: 0 5px 5px 0;
+        }
+
+        .action-btn {
+            background-color: var(--header-bg);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .action-btn:hover {
+            background-color: #154360;
+        }
+
+        #map {
+            height: 350px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid var(--card-border);
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background: var(--header-bg);
+            color: white;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-tools">
+            <button class="tool-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+            <button class="tool-btn" onclick="toggleLanguage()" id="langBtn">English</button>
+        </div>
+        <h1 id="headerTitle">Smart Rural Career & Exam AI Navigator</h1>
+        <p id="headerSub">AI Roadmaps, Interactive Syllabus Trackers & Exam Calculators</p>
+    </header>
+
+    <div class="container">
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'aiRoadmap')" id="tab1">🤖 AI Career Navigator</button>
+            <button class="tab-btn" onclick="openTab(event, 'tracker')" id="tab2">📊 Syllabus Tracker</button>
+            <button class="tab-btn" onclick="openTab(event, 'calculator')" id="tab3">🎯 Exam Eligibility Check</button>
+            <button class="tab-btn" onclick="openTab(event, 'mapSection')" id="tab4">📍 Study Hub Finder</button>
+        </div>
+
+        <!-- Section 1: AI Career Navigator -->
+        <div id="aiRoadmap" class="content-section active">
+            <h2>Interactive AI Career Path Generator</h2>
+            <p>Apni primary choice chuniye step-by-step career path dekhne ke liye:</p>
+
+            <div style="margin: 15px 0; display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="action-btn" onclick="generateRoadmap('rrb')">Railway (RRB) Focus</button>
+                <button class="action-btn" onclick="generateRoadmap('ssc')">SSC & Central Govt Focus</button>
+                <button class="action-btn" onclick="generateRoadmap('tech')">Software/Web Dev Pathway</button>
+                <button class="action-btn" onclick="generateRoadmap('higher')">Higher Edu (M.Sc / Ph.D)</button>
+            </div>
+
+            <div id="roadmapOutput">
+                <div class="card">
+                    <p><em>Click any option above to generate a customized 3-year preparation roadmap.</em></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Interactive Syllabus Tracker -->
+        <div id="tracker" class="content-section">
+            <h2>RRB NTPC & SSC Preparation Tracker</h2>
+            <p>Aapne kitna syllabus cover kar liya hai, niche mark karein:</p>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+
+            <div class="card">
+                <h3>Mathematics & Reasoning</h3>
+                <label><input type="checkbox" class="sync-check" onchange="updateProgress()"> Number System & Simplification</label><br>
+                <label><input type="checkbox" class="sync-check" onchange="updateProgress()"> Percentage & Ratio</label><br>
+                <label><input type="checkbox" class="sync-check" onchange="updateProgress()"> Coding-Decoding & Syllogism</label><br>
+            </div>
+
+            <div class="card">
+                <h3>General Science & Current Affairs</h3>
+                <label><input type="checkbox" class="sync-check" onchange="updateProgress()"> Basic Physics & Chemistry Laws</label><br>
+                <label><input type="checkbox" class="sync-check" onchange="updateProgress()"> Indian History & Geography</label><br>
+                <label><input type="checkbox" class="sync-check" onchange="updateProgress()"> Daily Current Affairs Practice</label>
+            </div>
+        </div>
+
+        <!-- Section 3: Eligibility & Calculator -->
+        <div id="calculator" class="content-section">
+            <h2>Exam Eligibility Checker</h2>
+            <div class="card">
+                <label for="userAge"><strong>Enter Your Age:</strong></label><br>
+                <input type="number" id="userAge" placeholder="e.g. 21" style="padding:8px; margin: 10px 0; width:100%; max-width:200px;"><br>
+
+                <label for="userQual"><strong>Highest Qualification:</strong></label><br>
+                <select id="userQual" style="padding:8px; margin: 10px 0; width:100%; max-width:200px;">
+                    <option value="10th">10th Pass</option>
+                    <option value="12th">12th Pass</option>
+                    <option value="Graduate">Bachelor's Degree (BSc/BA/BCom)</option>
+                </select><br>
+
+                <button class="action-btn" onclick="checkEligibility()">Check My Exam Options</button>
+            </div>
+
+            <div id="eligibilityResult"></div>
+        </div>
+
+        <!-- Section 4: Study Hub Finder Map -->
+        <div id="mapSection" class="content-section">
+            <h2>Nearby District Libraries & Study Hubs</h2>
+            <div style="margin-top:10px; display:flex; gap:10px;">
+                <input type="text" id="mapSearchInput" placeholder="Enter City/District (e.g. Nagpur)" style="padding:8px; flex-grow:1; border-radius:4px; border:1px solid #ccc;">
+                <button class="action-btn" onclick="locateLibrary()" style="margin-top:0;">Find Hubs</button>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Community Engagement Project (CEP) | Innovative Social Tech Portal</p>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let isHindi = false;
+        let map = L.map('map').setView([20.5937, 78.9629], 5);
+        let markers = [];
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        function openTab(evt, tabName) {
+            let contents = document.getElementsByClassName("content-section");
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].classList.remove("active");
+            }
+            let buttons = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+
+            if(tabName === 'mapSection') {
+                setTimeout(() => { map.invalidateSize(); }, 200);
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        function toggleLanguage() {
+            isHindi = !isHindi;
+            document.getElementById('langBtn').innerText = isHindi ? 'English' : 'हिंदी';
+            document.getElementById('headerTitle').innerText = isHindi ? 'स्मार्ट ग्रामीण करियर और परीक्षा एआई नेविगेटर' : 'Smart Rural Career & Exam AI Navigator';
+            document.getElementById('tab1').innerText = isHindi ? '🤖 एआई करियर नेविगेटर' : '🤖 AI Career Navigator';
+            document.getElementById('tab2').innerText = isHindi ? '📊 पाठ्यक्रम ट्रैकर' : '📊 Syllabus Tracker';
+            document.getElementById('tab3').innerText = isHindi ? '🎯 पात्रता जांच' : '🎯 Exam Eligibility Check';
+            document.getElementById('tab4').innerText = isHindi ? '📍 अध्ययन केंद्र खोजें' : '📍 Study Hub Finder';
+        }
+
+        function generateRoadmap(type) {
+            let out = document.getElementById("roadmapOutput");
+            if(type === 'rrb') {
+                out.innerHTML = `
+                    <div class="card">
+                        <h3>Railway (RRB) 3-Stage Master Strategy</h3>
+                        <div class="roadmap-step"><strong>Month 1-3:</strong> Basic Foundation in Math & NCERT Science (Class 9-10).</div>
+                        <div class="roadmap-step"><strong>Month 4-6:</strong> Daily Reasoning practice & RRB Previous Year Question Papers (PYQs).</div>
+                        <div class="roadmap-step"><strong>Month 7+:</strong> Full-length Mock Tests & Speed Building for CBT-1 & CBT-2.</div>
+                    </div>`;
+            } else if(type === 'tech') {
+                out.innerHTML = `
+                    <div class="card">
+                        <h3>Self-Taught Tech & Web Dev Roadmap</h3>
+                        <div class="roadmap-step"><strong>Month 1-2:</strong> Learn HTML5, CSS3, & Responsive Web Layouts.</div>
+                        <div class="roadmap-step"><strong>Month 3-4:</strong> JavaScript Basics, DOM Manipulation & API Integration.</div>
+                        <div class="roadmap-step"><strong>Month 5+:</strong> Build 3 CEP projects, deploy on GitHub, and start freelancing/internships.</div>
+                    </div>`;
+            } else if(type === 'ssc') {
+                out.innerHTML = `
+                    <div class="card">
+                        <h3>SSC CGL / CHSL Pathway</h3>
+                        <div class="roadmap-step"><strong>Stage 1:</strong> Focus on English Grammar, Vocabulary, & Quantitative Aptitude.</div>
+                        <div class="roadmap-step"><strong>Stage 2:</strong> General Knowledge & Computer Literacy modules.</div>
+                    </div>`;
+            } else {
+                out.innerHTML = `
+                    <div class="card">
+                        <h3>Higher Education & Research</h3>
+                        <div class="roadmap-step"><strong>Target Exams:</strong> IIT JAM, CSIR NET, GATE for M.Sc / Ph.D pathways.</div>
+                    </div>`;
+            }
+        }
+
+        function updateProgress() {
+            let checkboxes = document.querySelectorAll(".sync-check");
+            let checkedCount = 0;
+            checkboxes.forEach(cb => { if(cb.checked) checkedCount++; });
+
+            let total = checkboxes.length;
+            let percent = Math.round((checkedCount / total) * 100);
+
+            let bar = document.getElementById("progressBar");
+            bar.style.width = percent + "%";
+            bar.innerText = percent + "%";
+        }
+
+        function checkEligibility() {
+            let age = parseInt(document.getElementById("userAge").value);
+            let qual = document.getElementById("userQual").value;
+            let res = document.getElementById("eligibilityResult");
+
+            if(!age || age < 15) {
+                res.innerHTML = `<div class="card"><p style="color:red;">Please enter a valid age.</p></div>`;
+                return;
+            }
+
+            let eligibleExams = [];
+            if(qual === '10th' && age >= 18 && age <= 33) eligibleExams.push("RRB Group D", "SSC MTS");
+            if((qual === '12th' || qual === 'Graduate') && age >= 18 && age <= 30) eligibleExams.push("RRB ALP", "SSC CHSL");
+            if(qual === 'Graduate' && age >= 18 && age <= 33) eligibleExams.push("RRB NTPC Graduate Posts", "SSC CGL", "State PSC");
+
+            if(eligibleExams.length > 0) {
+                res.innerHTML = `<div class="card" style="border-left-color:#27ae60;">
+                    <h3>Eligible Exams for You (${qual}, Age ${age}):</h3>
+                    <ul>${eligibleExams.map(e => `<li>✅ ${e}</li>`).join('')}</ul>
+                </div>`;
+            } else {
+                res.innerHTML = `<div class="card"><p>No standard general age limit match found. Check specific category relaxations.</p></div>`;
+            }
+        }
+
+        async function locateLibrary() {
+            let input = document.getElementById('mapSearchInput').value;
+            if(!input) {
+                alert("Please enter a city or district name.");
+                return;
+            }
+
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            try {
+                let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}`;
+                let res = await fetch(url);
+                let data = await res.json();
+
+                if(data.length === 0) {
+                    alert("Location not found.");
+                    return;
+                }
+
+                let lat = parseFloat(data[0].lat);
+                let lon = parseFloat(data[0].lon);
+
+                map.setView([lat, lon], 12);
+
+                let marker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`<b>${input} District Library & Study Hub</b>`).openPopup();
+                markers.push(marker);
+
+            } catch(e) {
+                alert("Unable to fetch map data.");
+            }
+        }
+    </script>
+</body>
+</html>
